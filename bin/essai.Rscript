@@ -1,0 +1,5 @@
+#!/usr/bin/env Rscript
+
+pdf("essai.pdf")
+hist(rnorm(10000))
+dev.off()
