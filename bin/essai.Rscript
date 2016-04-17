@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+options(bitmapType='cairo')
 pdf("essai.pdf")
 hist(rnorm(10000))
 dev.off()
