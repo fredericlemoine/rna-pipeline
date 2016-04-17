@@ -1,12 +1,12 @@
-FROM pditommaso/dkrbase:1.2
+FROM ubuntu
 
-MAINTAINER Frederic Lemoine (From container by Paolo Di Tommaso <paolo.ditommaso@gmail.com>)
+MAINTAINER Frederic Lemoine
 
 #
 # Install pre-requistes
 #
 RUN apt-get update --fix-missing && \
-  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev
+  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev wget gfortran g++ gcc make libpng-dev libjpeg-dev
   
 
 RUN \
