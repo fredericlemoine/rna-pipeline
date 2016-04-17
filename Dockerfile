@@ -1,33 +1,23 @@
 FROM pditommaso/dkrbase:1.2
 
-MAINTAINER Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+MAINTAINER Frederic Lemoine (From container by Paolo Di Tommaso <paolo.ditommaso@gmail.com>)
 
 #
 # Install pre-requistes
 #
 RUN apt-get update --fix-missing && \
-  apt-get install -q -y samtools python libstdc++6 r-base
+  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev
   
-#
-# RNA-Seq tools 
-# 
-#RUN wget -q -O bowtie.zip https://sourceforge.net/projects/bowtie-bio/files/bowtie2/2.2.7/bowtie2-2.2.7-linux-x86_64.zip/download && \
-#  unzip bowtie.zip -d /opt/ && \
-#  ln -s /opt/bowtie2-2.2.7/ /opt/bowtie && \
-#  rm bowtie.zip 
-#  
-#RUN \
-#  wget -q http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz -O- \
-#  | tar xz -C /opt/ && \
-#  ln -s /opt/cufflinks-2.2.1.Linux_x86_64/ /opt/cufflinks 
-#  
-#  
-#RUN \
-#  wget -q https://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.Linux_x86_64.tar.gz -O- \
-#  | tar xz -C /opt/ && \
-#  ln -s /opt/tophat-2.1.0.Linux_x86_64/ /opt/tophat 
-#
-  
+
+RUN \
+    wget -q https://cran.r-project.org/src/base/R-3/R-3.2.5.tar.gz -O- \
+    | tar xz -C /opt/ && \
+    cd /opt/R-3.2.5/ && \
+    ./configure --with-x=no && \
+    make && \
+    make install && \
+    rm -rf /opt/R-3.2.5
+
 RUN \
   wget -q https://github.com/alexdobin/STAR/archive/2.5.1b.tar.gz -O- \
   | tar xz -C /opt/ && \
@@ -42,6 +32,15 @@ RUN \
     | tar xz -C /opt/ && \
     ln -s /opt/sratoolkit.2.5.7-ubuntu64/bin opt/sratoolkit
 
+RUN \
+    Rscript -e 'source("http://bioconductor.org/biocLite.R"); biocLite("DEXSeq")'
+
+RUN \
+    chmod +x /usr/local/lib/R/library/DEXSeq/python_scripts/* && \
+    ln -s /usr/local/lib/R/library/DEXSeq/python_scripts/ /opt/dexseq
+
+RUN echo 'alias dexseq_count="python /opt/dexseq/dexseq_count.py"' >> ~/.bashrc
+RUN echo 'alias dexseq_prepare_annoation="python /opt/dexseq/dexseq_prepare_annotation.py"' >> ~/.bashrc
 
 #
 # Finalize environment
