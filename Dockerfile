@@ -6,8 +6,7 @@ MAINTAINER Frederic Lemoine
 # Install pre-requistes
 #
 RUN apt-get update --fix-missing && \
-  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev wget gfortran g++ gcc make libpng-dev libjpeg-dev
-  
+  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev wget gfortran g++ gcc make libpng-dev libjpeg-dev libcairo2-dev
 
 RUN \
     wget -q https://cran.r-project.org/src/base/R-3/R-3.2.5.tar.gz -O- \
