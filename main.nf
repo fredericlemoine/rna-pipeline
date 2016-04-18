@@ -1,21 +1,42 @@
-channel = Channel.from("COUCOU")
 
-process STARHelp{
+
+sraids = Channel.from(
+       ["SF3B1", "SRR628582"], 
+       ["SF3B1", "SRR628583"], 
+       ["SF3B1", "SRR628584"], 
+       ["WT", "SRR628585"], 
+       ["WT", "SRR628586"], 
+       ["WT", "SRR628587"], 
+       ["WT", "SRR628588"],
+       ["WT", "SRR628589"]
+       )
+
+process getFile{
 	input:
-	val(message) from channel
+	set val(condition), val(sraid) from sraids
 	
 	output:
-	set file("coucou.txt"),file("essai.pdf") into starhelp
+	set val(condition),val(sraid), file("${sraid}_1.fastq.gz"), file("${sraid}_2.fastq.gz")  into fastq
 
 	shell:
 	"""
-	echo !{message} > coucou.txt
-	STAR --help >> coucou.txt
-	essai.Rscript
+	fastq-dump --gzip --split-files !{sraid}
 	"""
 }
 
+process align{
+	input:
+	set val(condition), val(sraid), file(fastq1), file(fastq2) from fastq
 
-starhelp.subscribe{
-f1,f2 -> println f1.name+ "-"+ f2.name
+	output:
+	set val(condition),val(sraid), file("${sraid}.bam*") into bam
+
+	shell:
+	"""
+	echo "coucou !{condition} : !{sraid}" > !{sraid}.bam
+	"""
+}
+
+bam.subscribe{
+cond, sraid, bamf -> println bamf.name+ "-"+ bamf.name
 }
