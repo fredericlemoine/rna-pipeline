@@ -46,7 +46,7 @@ process createGenomeIndex{
 	     --runMode genomeGenerate \
 	     --genomeDir ref/ \
 	     --genomeFastaFiles *.fa \
-	tar -cvf ref.tar3B.gz ref/
+	tar -cvf ref.tar.gz ref/
 	rm -rf ref
 	"""
 }
