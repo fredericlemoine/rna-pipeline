@@ -16,6 +16,8 @@ sraids = Channel.from(
        )
 
 process getChromosomes{
+	tag "$chr"
+
 	input:
 	val(chr) from refchrs
 
@@ -29,6 +31,7 @@ process getChromosomes{
 }
 
 process createGenomeIndex{
+
 	input:
 	file(chrfas) from chrfa.toList()
 
@@ -49,6 +52,8 @@ process createGenomeIndex{
 }
 
 process getFile{
+	tag "$sraid"
+
 	input:
 	set val(condition), val(sraid) from sraids
 	
@@ -62,6 +67,8 @@ process getFile{
 }
 
 process align{
+	tag "$sraid"
+
 	input:
 	set val(condition), val(sraid), file(fastq1), file(fastq2) from fastq
 	file(refIndex) from refindex.first()
