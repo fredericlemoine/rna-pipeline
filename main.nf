@@ -45,7 +45,7 @@ process createGenomeIndex{
 	STAR --runThreadN 4 \
 	     --runMode genomeGenerate \
 	     --genomeDir ref/ \
-	     --genomeFastaFiles *.fa \
+	     --genomeFastaFiles *.fa
 	tar -cvf ref.tar.gz ref/
 	rm -rf ref
 	"""
