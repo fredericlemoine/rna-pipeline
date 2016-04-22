@@ -36,18 +36,18 @@ process createGenomeIndex{
 	file(chrfas) from chrfa.toList()
 
 	output:
-	file("ref.tar.gz") into refindex
+	file("ref.tar") into refindex
 
 	shell:
 	"""
-	mkdir ref
-	gunzip *.fa.gz
+	/bin/mkdir ref
+	/bin/gunzip -c *.fa.gz > ref.fa
 	STAR --runThreadN 4 \
 	     --runMode genomeGenerate \
 	     --genomeDir ref/ \
-	     --genomeFastaFiles *.fa
-	tar -cvf ref.tar.gz ref/
-	rm -rf ref
+	     --genomeFastaFiles ref.fa
+	/bin/tar -cvf ref.tar ref/
+	/bin/rm -rf ref.fa ref
 	"""
 }
 
@@ -69,6 +69,8 @@ process getFile{
 process align{
 	tag "$sraid"
 
+	cpus 2
+
 	input:
 	set val(condition), val(sraid), file(fastq1), file(fastq2) from fastq
 	file(refIndex) from refindex.first()
@@ -78,13 +80,13 @@ process align{
 
 	shell:
 	"""
-	tar -xf !{refIndex}
+	/bin/tar -xf !{refIndex}
 	STAR --outSAMstrandField intronMotif     \
 	    --outFilterMismatchNmax 4            \
 	    --outFilterMultimapNmax 10           \
 	    --genomeDir  ref/                    \
 	    --readFilesIn !{fastq1} !{fastq2}    \
-	    --runThreadN 4                       \
+	    --runThreadN 2                       \
 	    --outSAMunmapped None                \
 	    --outSAMtype BAM SortedByCoordinate  \
 	    --outStd BAM_SortedByCoordinate      \
