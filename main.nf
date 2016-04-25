@@ -15,6 +15,9 @@ sraids = Channel.from(
        ["WT", "SRR628589"]
        )
 
+gtfF   = file([params.datadir, params.gtf].join(File.separator))
+tableF = file([params.datadir, params.table].join(File.separator))
+
 process getChromosomes{
 	tag "$chr"
 
@@ -91,14 +94,60 @@ process align{
 	    --outSAMtype BAM SortedByCoordinate  \
 	    --outStd BAM_SortedByCoordinate      \
 	    --genomeLoad LoadAndKeep             \
-	    --outFileNamePrefix $ALIGNPATH/${i}/ \
+	    --outFileNamePrefix .                \
 	    --readFilesCommand gunzip -c         \
 	    --limitBAMsortRAM 3000000000         \
 	    > !{sraid}.bam
 	samtools index !{sraid}.bam
+	/bin/rm -rf ref/
 	"""
 }
 
-bam.subscribe{
-cond, sraid, bamf -> println ${cond}+" "+sraid+" "+bamf.name
+process prepareAnnotations{
+	output:
+	file("annotations_DEXSeq.gtf") into annotFile
+
+	shell:
+	'''
+	/bin/gunzip -c !{gtfF} > gtf
+	/bin/gunzip -c !{tableF} > table
+	addGeneNameToUcscGFF.pl gtf table > annotations.gtf
+	dexseq_prepare_annotation annotations.gtf annotations_DEXSeq.gtf
+	/bin/rm -f gtf table annotations.gtf
+	'''
+}
+
+
+process countReads {
+	input:
+	file(annot) from annotFile.first()
+	set val(condition),val(sraid), file(bam) from bam
+
+	output:
+	set val(condition),val(sraid),file("counts.txt") into counts
+
+	shell:
+	'''
+	dexseq_count -p yes -r pos -s no -f bam !{annot} !{bam} counts.txt
+	'''
+}
+
+/*process analyzeSplicing {
+	input:
+	set val(condition),val(sraid),file("counts.txt") into counts
+	
+	output:
+	file("*.png")
+
+	shell:
+	'''
+	#!/usr/bin/env Rscript
+	
+	
+	'''
+}
+*/
+
+counts.subscribe{
+	cond, sraid, counts -> println ${cond}+" "+sraid+" "+counts.name
 }
