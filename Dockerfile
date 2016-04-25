@@ -6,7 +6,9 @@ MAINTAINER Frederic Lemoine
 # Install pre-requistes
 #
 RUN apt-get update --fix-missing && \
-  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 libreadline6-dev wget gfortran g++ gcc make libpng-dev libjpeg-dev libcairo2-dev
+  apt-get install -q -y samtools python libcurl4-gnutls-dev libxml2 libxml2-dev libreadline6 \
+                        libreadline6-dev wget gfortran g++ gcc make libpng-dev libjpeg-dev \
+			libcairo2-dev python-numpy python-matplotlib python-setuptools python-dev
 
 RUN \
     wget -q https://cran.r-project.org/src/base/R-3/R-3.2.5.tar.gz -O- \
@@ -16,6 +18,16 @@ RUN \
     make && \
     make install && \
     rm -rf /opt/R-3.2.5
+
+RUN \
+    wget -q "https://pypi.python.org/packages/72/0f/566afae6c149762af301a19686cd5fd1876deb2b48d09546dbd5caebbb78/HTSeq-0.6.1.tar.gz#md5=b7f4f38a9f4278b9b7f948d1efbc1f05" -O- \
+    | tar xz -C /opt/ && \
+    cd /opt/HTSeq-0.6.1/ && \
+    python setup.py build && \
+    python setup.py  install && \
+    cd .. && \
+    rm -rf /opt/HTSeq-0.6.1/
+
 
 RUN \
   wget -q https://github.com/alexdobin/STAR/archive/2.5.1b.tar.gz -O- \
@@ -39,9 +51,9 @@ RUN \
     ln -s /usr/local/lib/R/library/DEXSeq/python_scripts/ /opt/dexseq
 
 RUN echo 'alias dexseq_count="python /opt/dexseq/dexseq_count.py"' >> ~/.bashrc
-RUN echo 'alias dexseq_prepare_annoation="python /opt/dexseq/dexseq_prepare_annotation.py"' >> ~/.bashrc
+RUN echo 'alias dexseq_prepare_annotation="python /opt/dexseq/dexseq_prepare_annotation.py"' >> ~/.bashrc
 
 #
 # Finalize environment
 #
-ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/opt/STAR:/opt/sratoolkit
+ENV PATH /bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/opt/STAR:/opt/sratoolkit
