@@ -57,4 +57,4 @@ RUN pip install pysam && \
 #
 ENV PATH /bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/opt/STAR:/opt/sratoolkit
 
-RUN apt-get remove -q -y libcurl4-gnutls-dev libxml2-dev libreadline6-dev gfortran g++ gcc make libpng-dev libjpeg-dev libcairo2-dev python-pip patch python-dev && apt-get autoremove -y
+RUN apt-get remove -q -y libxml2-dev libreadline6-dev gfortran g++ gcc make libpng-dev libjpeg-dev libcairo2-dev python-pip patch python-dev && apt-get autoremove -y
