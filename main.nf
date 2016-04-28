@@ -98,7 +98,7 @@ process prepareDexseqAnnotations{
 	file(annotFile)
 
 	output:
-	file("annotations_DEXSeq.gtf") into annotdexseqFile
+	file("annotations_DEXSeq.gtf") into annotdexseqFile1, annotdexseqFile2
 
 	shell:
 	'''
@@ -133,7 +133,7 @@ process align{
 
 process countReads {
 	input:
-	file(annot) from annotdexseqFile.first()
+	file(annot) from annotdexseqFile1.first()
 	set val(condition),val(sraid), file(bam) from bam
 
 	output:
@@ -168,7 +168,7 @@ process analyzeSplicing {
 
 	input:
 	file(acounts) from allcounts
-	/*file(annot) from annotdexseqFile.first()*/
+	file(annot) from annotdexseqFile2.first()
 
 	output:
 	file("*_out.*") into dexseqout mode flatten
@@ -207,7 +207,7 @@ process analyzeSplicing {
 	}
 
 	# Create DEXSeqDataSet
-	dxd= DEXSeqDataSetFromHTSeq(countfiles,sampleData=sampleTable,design=~sample+exon+condition:exon,flattenedfile="/mnt/external/rna-pipeline/work/ce/3f0c16a844b7971214be23b5b34008/annotations_DEXSeq.gtf")
+	dxd= DEXSeqDataSetFromHTSeq(countfiles,sampleData=sampleTable,design=~sample+exon+condition:exon,flattenedfile=!{annot})
 
 	# Stat analysis
 	dxd=estimateSizeFactors(dxd)
