@@ -39,30 +39,32 @@ process getChromosomes{
 	file("${chr}.fa.gz") into chrfa
 
 	shell:
-	"""
+	'''
 	wget http://hgdownload.soe.ucsc.edu/goldenPath/hg19/chromosomes/!{chr}.fa.gz
-	"""
+	'''
 }
 
 process createGenomeIndex{
+
+	memory '30 GB'
+	cpus 10
 
 	input:
 	file(chrfas) from chrfa.toList()
 
 	output:
-	file("ref.tar") into refindex
+	file("ref/*") into refindex
 
 	shell:
-	"""
+	'''
 	/bin/mkdir ref
 	/bin/gunzip -c *.fa.gz > ref.fa
-	STAR --runThreadN 2 \
+	STAR --runThreadN 10 \
 	     --runMode genomeGenerate \
 	     --genomeDir ref/ \
 	     --genomeFastaFiles ref.fa
-	/bin/tar -cvf ref.tar ref/
-	/bin/rm -rf ref.fa ref
-	"""
+	/bin/rm -rf ref.fa
+	'''
 }
 
 process getFile{
@@ -75,9 +77,9 @@ process getFile{
 	set val(condition),val(sraid), file("${sraid}_1.fastq.gz"), file("${sraid}_2.fastq.gz")  into fastq
 
 	shell:
-	"""
+	'''
 	fastq-dump --gzip --split-files !{sraid}
-	"""
+	'''
 }
 
 process prepareAnnotations{
@@ -94,11 +96,12 @@ process prepareAnnotations{
 }
 
 process prepareDexseqAnnotations{
+
 	input:
 	file(annotFile)
 
 	output:
-	file("annotations_DEXSeq.gtf") into annotdexseqFile1, annotdexseqFile2
+	file("annotations_DEXSeq.gtf") into annotdexseqFile
 
 	shell:
 	'''
@@ -108,11 +111,16 @@ process prepareDexseqAnnotations{
 	'''
 }
 
+annotdexseqFile1 = Channel.create()
+annotdexseqFile2 = Channel.create()
+annotdexseqFile.into{annotdexseqFile1; annotdexseqFile2}
+
 
 process align{
 	tag "$sraid"
 
 	cpus 10
+	memory "30 GB"
 
 	input:
 	set val(condition), val(sraid), file(fastq1), file(fastq2) from fastq
@@ -122,12 +130,12 @@ process align{
 	set val(condition),val(sraid), file("${sraid}.bam*") into bam
 
 	shell:
-	"""
-	/bin/tar -xf !{refIndex}
-	STAR --outSAMstrandField intronMotif --outFilterMismatchNmax 4 --outFilterMultimapNmax 10 --genomeDir ref --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) --runThreadN 2  --outSAMunmapped None   --outSAMtype BAM SortedByCoordinate --outStd BAM_SortedByCoordinate  --genomeLoad NoSharedMemory --limitBAMsortRAM 3000000000  > !{sraid}.bam
+	'''
+	mkdir ref
+	mv !{refIndex} ref/
+	STAR --outSAMstrandField intronMotif --outFilterMismatchNmax 4 --outFilterMultimapNmax 10 --genomeDir ref --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) --runThreadN 10  --outSAMunmapped None   --outSAMtype BAM SortedByCoordinate --outStd BAM_SortedByCoordinate  --genomeLoad NoSharedMemory --limitBAMsortRAM 3000000000  > !{sraid}.bam
 	samtools index !{sraid}.bam
-	/bin/rm -rf ref/
-	"""
+	'''
 }
 
 
@@ -207,7 +215,7 @@ process analyzeSplicing {
 	}
 
 	# Create DEXSeqDataSet
-	dxd= DEXSeqDataSetFromHTSeq(countfiles,sampleData=sampleTable,design=~sample+exon+condition:exon,flattenedfile=!{annot})
+	dxd= DEXSeqDataSetFromHTSeq(countfiles,sampleData=sampleTable,design=~sample+exon+condition:exon,flattenedfile="!{annot}")
 
 	# Stat analysis
 	dxd=estimateSizeFactors(dxd)
