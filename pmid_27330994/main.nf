@@ -1,4 +1,4 @@
-refgenome = "BX571856.1" /* NCBI genome ACC */
+refgenome = "NC_002952.2" /* NCBI genome ACC */
 
 sraids = Channel.from(
        ["NL", "SRR1598811"], /* NL 4*/
@@ -75,12 +75,9 @@ process prepareAnnotations{
 
 	shell:
 	'''
-	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{refgenome}&rettype=fasta&retmode=text"
-	mv efetch* !{refgenome}.fa
-	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{refgenome}&rettype=gb&retmode=text"
-	mv efetch* !{refgenome}.gb
-	seqret -sequence !{refgenome}.fa -feature -fformat gb -fopenfile !{refgenome}.gb -osformat gff -auto
-	mv *.gff annotations.gtf
+	wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/Staphylococcus_aureus/all_assembly_versions/GCF_000011505.1_ASM1150v1/GCF_000011505.1_ASM1150v1_genomic.gff.gz
+	mv GCF_000011505.1_ASM1150v1_genomic.gff.gz annotations.gtf.gz
+	gunzip annotations.gtf.gz 
 	'''
 }
 
@@ -119,7 +116,7 @@ process countReads {
 
 	shell:
 	'''
-	featureCounts -t gene -g gene -s 0 -a !{annot} -o counts.txt *.bam
+	featureCounts  -O --largestOverlap -p -M -t gene -g old_locus_tag -s 0 -a !{annot} -o counts.txt *.bam
 	'''
 }
 
