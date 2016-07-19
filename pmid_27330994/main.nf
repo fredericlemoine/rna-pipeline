@@ -1,4 +1,4 @@
-refchrs = Channel.from("49482253") /* NCBI genome GI */
+refgenome = "BX571856.1" /* NCBI genome ACC */
 
 sraids = Channel.from(
        ["NL", "SRR1598811"], /* NL 4*/
@@ -8,8 +8,6 @@ sraids = Channel.from(
        )
 
 params.datadir = ["$baseDir", "data"].join(File.separator)
-params.gtf = "refgene_hg19.gtf.gz"
-params.table = "refgene_hg19.table.gz"
 params.resultDir= 'result'
 
 gtfF   = file([params.datadir, params.gtf].join(File.separator))
@@ -22,20 +20,17 @@ resultDir.with {
 }
 
 process getChromosomes{
-	tag "$chr"
-
-	input:
-	val(chr) from refchrs
+	tag "$refgenome"
 
 	output:
-	file("${chr}.fa.gz") into chrfa
+	file("${refgenome}.fa.gz") into chrfa
 
 	shell:
 	'''
-	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{chr}&rettype=fasta&retmode=text"
-	mv efetch* !{chr}.fa
-	awk '{if($0~/^>/){split($0,a,"|"); print ">" a[4]}else{print $0}}' !{chr}.fa | gzip -c - > !{chr}.fa.gz
-	rm !{chr}.fa
+	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{refgenome}&rettype=fasta&retmode=text"
+	mv efetch* !{refgenome}.fa
+	awk '{if($0~/^>/){split($0,a,"|"); print ">" a[4]}else{print $0}}' !{refgenome}.fa q| gzip -c - > !{refgenome}.fa.gz
+	rm !{refgenome}.fa
 	'''
 }
 
@@ -80,9 +75,12 @@ process prepareAnnotations{
 
 	shell:
 	'''
-	wget ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/Staphylococcus_aureus/all_assembly_versions/GCF_000011505.1_ASM1150v1/GCF_000011505.1_ASM1150v1_genomic.gff.gz
-	mv GCF_000011505.1_ASM1150v1_genomic.gff.gz annotations.gtf.gz
-	gunzip annotations.gtf.gz
+	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{refgenome}&rettype=fasta&retmode=text"
+	mv efetch* !{refgenome}.fa
+	wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=!{refgenome}&rettype=gb&retmode=text"
+	mv efetch* !{refgenome}.gb
+	seqret -sequence !{refgenome}.fa -feature -fformat gb -fopenfile !{refgenome}.gb -osformat gff -auto
+	mv *.gff annotations.gtf
 	'''
 }
 
@@ -121,7 +119,7 @@ process countReads {
 
 	shell:
 	'''
-	featureCounts -t gene -g ID -s 1 -a !{annot} -o counts.txt *.bam
+	featureCounts -t gene -g gene -s 0 -a !{annot} -o counts.txt *.bam
 	'''
 }
 
@@ -165,10 +163,6 @@ process diffExpression {
 	widecount=dcast(counts, gene ~ sraid,value.var="count")
 	row.names(widecount)=widecount$gene
 	widecount=widecount[,-1]
-
-	## Exon and Gene Names
-	##exons=sapply(strsplit(row.names(widecount), ":"),"[",2)
-	##genes=sapply(strsplit(row.names(widecount), ":"),"[",1)
 
 	## Sample Annotation
 	samples=unique(counts[,c(1,2)])$cond
