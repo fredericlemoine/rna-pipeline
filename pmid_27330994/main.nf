@@ -116,7 +116,8 @@ process countReads {
 
 	shell:
 	'''
-	featureCounts  -O --largestOverlap -p -M -t gene -g old_locus_tag -s 0 -a !{annot} -o counts.txt *.bam
+	grep old_locus_tag !{annot} > temp.gff
+	featureCounts  -O --largestOverlap -p -M -t gene -g old_locus_tag -s 0 -a temp.gff -o counts.txt *.bam
 	'''
 }
 
@@ -230,6 +231,7 @@ process diffExpression {
 
 	# Export the results in a easily readable file
 	write.table(res, file="results_out.txt")
+	write.table(res[which(abs(res$log2FoldChange)>log2(2) & res$padj<0.1),], file="deg_results_out.txt")
 	sink("results_summary_out.txt")
 	summary(res)
 	sink()  # returns output to the console
