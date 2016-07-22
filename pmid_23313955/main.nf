@@ -78,7 +78,14 @@ process getFile{
 
 	shell:
 	'''
-	fastq-dump --gzip --split-files !{sraid}
+	#!/bin/bash
+	SRAID=!{sraid}
+	PREFIX1=${SRAID:0:3}
+	PREFIX2=${SRAID:0:6}
+	ascp -i $ASCPKEY -k 1 -T -l300m \
+	  anonftp@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/$PREFIX1/$PREFIX2/!{sraid}/!{sraid}.sra .
+	fastq-dump --gzip --split-files ./!{sraid}.sra
+	rm ./!{sraid}.sra
 	'''
 }
 
@@ -127,22 +134,34 @@ process align{
 	file(refIndex) from refindex.first()
 
 	output:
-	set val(condition),val(sraid), file("${sraid}.bam*") into bam
+	set val(condition),val(sraid), file("${sraid}.bam") into bam
 
 	shell:
 	'''
 	mkdir ref
 	mv !{refIndex} ref/
 	STAR --outSAMstrandField intronMotif --outFilterMismatchNmax 4 --outFilterMultimapNmax 10 --genomeDir ref --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) --runThreadN 10  --outSAMunmapped None   --outSAMtype BAM SortedByCoordinate --outStd BAM_SortedByCoordinate  --genomeLoad NoSharedMemory --limitBAMsortRAM 3000000000  > !{sraid}.bam
-	samtools index !{sraid}.bam
 	'''
 }
+
+process indexBam{
+
+	input:
+	set val(condition),val(sraid), file(bam) from bam
+
+	output:
+	set val(condition),val(sraid), file(bam), file("*.bai") into indexedbam
+
+	shell:
+	'''
+	samtools index !{bam}
+	'''
 
 
 process countReads {
 	input:
 	file(annot) from annotdexseqFile1.first()
-	set val(condition),val(sraid), file(bam) from bam
+	set val(condition),val(sraid), file(bam) from indexedbam
 
 	output:
 	set val(condition),val(sraid),file("counts.txt") into counts

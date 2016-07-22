@@ -65,7 +65,13 @@ process getFile{
 
 	shell:
 	'''
-	fastq-dump --gzip --split-files !{sraid}
+	SRAID=!{sraid}
+	PREFIX1=${SRAID:0:3}
+	PREFIX2=${SRAID:0:6}
+	ascp -i $ASCPKEY -k 1 -T -l300m \
+	  anonftp@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/$PREFIX1/$PREFIX2/!{sraid}/!{sraid}.sra .
+	fastq-dump --gzip --split-files ./!{sraid}.sra
+	rm ./!{sraid}.sra
 	'''
 }
 
