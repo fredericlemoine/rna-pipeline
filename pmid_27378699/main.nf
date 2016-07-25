@@ -245,6 +245,7 @@ process analyzeSplicing {
 	colnames(sampleTable)=c("condition","libType")
 	# on remet dans l'ordre
 	sampleTable=sampleTable[colnames(widecount),]
+	sampleTable$condition=as.factor(sampleTable$condition)
 
 	# Write into individual files
 	countfiles=paste0(colnames(widecount),".txt")
@@ -276,8 +277,13 @@ process analyzeSplicing {
 	dev.off()
 
 	for(i in unique(dxr1[dxr1$padj<0.1,"groupID"])){
-	      png(paste0(i,"_out.png"))
-	      plotDEXSeq( dxr1,i,legend=TRUE,cex.axis=1.2,cex=1.3,lwd=2,norCounts=TRUE,splicing=TRUE,displayTranscripts=TRUE)
+	      png(paste0(i,"_out.png"),width=800,height=800)
+	      result = tryCatch({
+	      	     plotDEXSeq( dxr1,i,legend=TRUE,cex.axis=1.2,cex=1.3,lwd=2,norCounts=TRUE,splicing=TRUE,displayTranscripts=TRUE)
+	      }, warning = function(w) {
+	      }, error = function(e) {
+	      }, finally = {
+              });
 	      dev.off()
 	}
 	'''
