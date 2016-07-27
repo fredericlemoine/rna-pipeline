@@ -23,6 +23,9 @@ RUN \
     Rscript -e 'source("http://bioconductor.org/biocLite.R"); biocLite("DEXSeq")'
 
 RUN \
+    Rscript -e 'source("http://bioconductor.org/biocLite.R"); biocLite("limma")'
+
+RUN \
     chmod +x /usr/local/lib/R/library/DEXSeq/python_scripts/* && \
     ln -s /usr/local/lib/R/library/DEXSeq/python_scripts/ /opt/dexseq
 
