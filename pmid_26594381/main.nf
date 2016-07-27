@@ -215,6 +215,8 @@ process diffExpression {
 	#!/usr/bin/env Rscript
 	library(DESeq2)
 	library(reshape2)
+	library(limma)
+
 	options(bitmapType='cairo')
 
 	## Count data
@@ -273,6 +275,13 @@ process diffExpression {
 	# PCA
 	png("pca_out.png")
 	plotPCA(varianceStabilizingTransformation(dds))
+	dev.off()
+
+	# MDS Plot
+	png("mds_out.png")
+	mds<-plotMDS(log(counts(dds, normalized=TRUE) + 1))
+	plot(mds, pch=16, xlim=c(-2,8))
+	text(mds$x, mds$y, adj=0, labels=sampleTable[names(mds$x),"condition"])
 	dev.off()
 
 	# Hierarchical Clustering
