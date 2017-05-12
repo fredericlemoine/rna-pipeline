@@ -156,7 +156,7 @@ process indexBam{
 	'''
 	samtools index !{bam}
 	'''
-
+}
 
 process countReads {
 	input:
@@ -267,3 +267,4 @@ process analyzeSplicing {
 dexseqout.subscribe{
 	file->file.copyTo(resultDir.resolve(file.name))
 }
+
