@@ -108,7 +108,7 @@ process prepareDexseqAnnotations{
 	file(annotFile)
 
 	output:
-	file("annotations_DEXSeq.gtf") into annotdexseqFile
+	file "annotations_DEXSeq.gtf" into annotdexseqFile1, annotdexseqFile2
 
 	shell:
 	'''
@@ -117,11 +117,6 @@ process prepareDexseqAnnotations{
 	rm ann.gtf
 	'''
 }
-
-annotdexseqFile1 = Channel.create()
-annotdexseqFile2 = Channel.create()
-annotdexseqFile.into{annotdexseqFile1; annotdexseqFile2}
-
 
 process align{
 	tag "$sraid"
@@ -140,7 +135,18 @@ process align{
 	'''
 	mkdir ref
 	mv !{refIndex} ref/
-	STAR --outSAMstrandField intronMotif --outFilterMismatchNmax 4 --outFilterMultimapNmax 10 --genomeDir ref --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) --runThreadN 10  --outSAMunmapped None   --outSAMtype BAM SortedByCoordinate --outStd BAM_SortedByCoordinate  --genomeLoad NoSharedMemory --limitBAMsortRAM 3000000000  > !{sraid}.bam
+	STAR --outSAMstrandField intronMotif \
+	     --outFilterMismatchNmax 4 \
+	     --outFilterMultimapNmax 10 \
+	     --genomeDir ref \
+	     --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) \
+	     --runThreadN 10  \
+	     --outSAMunmapped None \
+	     --outSAMtype BAM SortedByCoordinate \
+	     --outStd BAM_SortedByCoordinate \
+	     --genomeLoad NoSharedMemory \
+	     --limitBAMsortRAM 3000000000 \
+	     > !{sraid}.bam
 	'''
 }
 
