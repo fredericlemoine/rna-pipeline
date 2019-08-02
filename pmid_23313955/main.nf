@@ -46,9 +46,6 @@ process getChromosomes{
 
 process createGenomeIndex{
 
-	memory '30 GB'
-	cpus 10
-
 	input:
 	file(chrfas) from chrfa.toList()
 
@@ -59,7 +56,7 @@ process createGenomeIndex{
 	'''
 	/bin/mkdir ref
 	/bin/gunzip -c *.fa.gz > ref.fa
-	STAR --runThreadN 10 \
+	STAR --runThreadN !{task.cpus} \
 	     --runMode genomeGenerate \
 	     --genomeDir ref/ \
 	     --genomeFastaFiles ref.fa
@@ -82,8 +79,7 @@ process getFile{
 	SRAID=!{sraid}
 	PREFIX1=${SRAID:0:3}
 	PREFIX2=${SRAID:0:6}
-	ascp -i $ASCPKEY -k 1 -T -l300m \
-	  anonftp@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/$PREFIX1/$PREFIX2/!{sraid}/!{sraid}.sra .
+	wget anonymous@ftp.ncbi.nlm.nih.gov:/sra/sra-instant/reads/ByRun/sra/$PREFIX1/$PREFIX2/!{sraid}/!{sraid}.sra
 	fastq-dump --gzip --split-files ./!{sraid}.sra
 	rm ./!{sraid}.sra
 	'''
@@ -121,12 +117,9 @@ process prepareDexseqAnnotations{
 process align{
 	tag "$sraid"
 
-	cpus 10
-	memory "30 GB"
-
 	input:
 	set val(condition), val(sraid), file(fastq1), file(fastq2) from fastq
-	file(refIndex) from refindex.first()
+	file(refIndex) from refindex
 
 	output:
 	set val(condition),val(sraid), file("${sraid}.bam") into bam
@@ -140,12 +133,12 @@ process align{
 	     --outFilterMultimapNmax 10 \
 	     --genomeDir ref \
 	     --readFilesIn <(gunzip -c !{fastq1}) <(gunzip -c !{fastq2}) \
-	     --runThreadN 10  \
+	     --runThreadN !{task.cpus}  \
 	     --outSAMunmapped None \
 	     --outSAMtype BAM SortedByCoordinate \
 	     --outStd BAM_SortedByCoordinate \
 	     --genomeLoad NoSharedMemory \
-	     --limitBAMsortRAM 3000000000 \
+	     --limitBAMsortRAM !{task.memory.toBytes()} \
 	     > !{sraid}.bam
 	'''
 }
@@ -166,7 +159,7 @@ process indexBam{
 
 process countReads {
 	input:
-	file(annot) from annotdexseqFile1.first()
+	file(annot) from annotdexseqFile1
 	set val(condition),val(sraid), file(bam) from indexedbam
 
 	output:
@@ -201,7 +194,7 @@ process analyzeSplicing {
 
 	input:
 	file(acounts) from allcounts
-	file(annot) from annotdexseqFile2.first()
+	file(annot) from annotdexseqFile2
 
 	output:
 	file("*_out.*") into dexseqout mode flatten
